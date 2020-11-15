@@ -15,7 +15,7 @@ func main() {
 		NextPageDelayMinutes: configService.GetIntProp("feedbacks.next-page-delay-minutes"),
 		AuthorizationService: newAuthorizationService(configService),
 		StateHolder: &service.FileStateHolder{FilePath: configService.GetProp("state-holder.file-path")},
-		FeedbacksProcessor: &service.LoggingFeedbacksProcessor{},
+		FeedbacksProcessor: newFeedbacksProcessor(configService),
 	}
 	scheduler := service.SchedulerServiceImpl{
 		IntervalMinutes: configService.GetIntProp("job-run.interval.minutes"),
@@ -29,5 +29,11 @@ func newAuthorizationService(configService service.ConfigService) service.Author
 		RefreshTokenUrl: configService.GetProp("orty-api.refresh-token.url"),
 		RefreshToken: configService.GetProp("orty-api.refresh-token"),
 		TokenTimeToLiveMinutes: configService.GetIntProp("orty-api.jwt.time-to-live-minutes"),
+	}
+}
+
+func newFeedbacksProcessor(configService service.ConfigService) service.FeedbacksProcessor {
+	return &service.BotApiFeedbacksProcessor{
+		SendFeedbacksUrl: configService.GetProp("bot-api.send-feedbacks.url"),
 	}
 }

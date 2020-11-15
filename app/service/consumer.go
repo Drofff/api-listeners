@@ -1,6 +1,7 @@
 package service
 
 import (
+	"api-listeners/app/cache"
 	"api-listeners/app/dto"
 	"api-listeners/app/util"
 	"fmt"
@@ -22,18 +23,16 @@ const lastFetchTimeState = "last-fetch"
 const lastFetchedPageState = "last-page"
 
 func (consumer *FeedbacksConsumer) Run() {
+	timeRun := util.UnixMillis()
 	lft, err := consumer.getLastFetchTime()
 	if err != nil {
 		return
 	}
-	defer consumer.updateLastFetchTime()
+	consumer.updateLastFetchTime()
 	defer consumer.clearLastFetchedPage()
 	for {
-		lfp := consumer.getLastFetchedPage()
-		nfp := lfp + 1
-		feedbacksUrl := consumer.getFeedbacksUrl(nfp, lft)
 		feedbacks := &dto.FeedbacksDto{}
-		err = util.DoGetWithToken(feedbacksUrl, consumer.authorizationToken(), feedbacks)
+		err = consumer.nextFeedbacksPageFromTo(lft, timeRun, feedbacks)
 		if err != nil {
 			fmt.Println("Couldn't fetch feedbacks because of: ", err)
 			return
@@ -42,9 +41,10 @@ func (consumer *FeedbacksConsumer) Run() {
 		if !feedbacks.HasNextPage() {
 			break
 		}
-		consumer.updateLastFetchedPage(nfp)
+		consumer.incrementLastFetchedPage()
 		consumer.waitToConsumeNextPage()
 	}
+	cache.Submit()
 }
 
 func (consumer *FeedbacksConsumer) getLastFetchTime() (int64, error) {
@@ -63,12 +63,40 @@ func (consumer *FeedbacksConsumer) getLastFetchTime() (int64, error) {
 }
 
 func (consumer *FeedbacksConsumer) updateLastFetchTime() {
-	currTime := time.Now().Unix()
-	consumer.StateHolder.SetIntState(lastFetchTimeState, currTime)
+	currTime := util.UnixMillis()
+	consumer.StateHolder.SetState(lastFetchTimeState, currTime)
 }
 
 func (consumer *FeedbacksConsumer) clearLastFetchedPage() {
-	consumer.StateHolder.SetIntState(lastFetchedPageState, -1)
+	consumer.StateHolder.SetState(lastFetchedPageState, -1)
+}
+
+func (consumer *FeedbacksConsumer) nextFeedbacksPageFromTo(from, to int64, res *dto.FeedbacksDto) error {
+	page := consumer.getNextPageToFetch()
+	feedbacksUrl := consumer.getFeedbacksUrl(page, from, to)
+	return util.DoGetWithToken(feedbacksUrl, consumer.authorizationToken(), res)
+}
+
+func (consumer *FeedbacksConsumer) getFeedbacksUrl(page, from, to int64) string {
+	return fmt.Sprintf("%v?page=%v&size=%v&startDate=%v&endDate=%v", consumer.GetFeedbacksUrl,
+		page, consumer.FeedbacksPageSize, from, to)
+}
+
+func (consumer *FeedbacksConsumer) authorizationToken() string {
+	authzToken, err := consumer.AuthorizationService.GetAuthorizationToken()
+	if err != nil {
+		log.Fatal("Error while getting an authorization token: ", err)
+	}
+	return authzToken
+}
+
+func (consumer *FeedbacksConsumer) incrementLastFetchedPage() {
+	nextPage := consumer.getNextPageToFetch()
+	consumer.StateHolder.SetState(lastFetchedPageState, nextPage)
+}
+
+func (consumer *FeedbacksConsumer) getNextPageToFetch() int64 {
+	return consumer.getLastFetchedPage() + 1
 }
 
 func (consumer *FeedbacksConsumer) getLastFetchedPage() int64 {
@@ -82,24 +110,6 @@ func (consumer *FeedbacksConsumer) getLastFetchedPage() int64 {
 		}
 	}
 	return lastPage
-}
-
-func (consumer *FeedbacksConsumer) getFeedbacksUrl(page int64, from int64) string {
-	to := time.Now().Unix()
-	return fmt.Sprintf("%v?page=%v&size=%v&startDate=%v&endDate%v", consumer.GetFeedbacksUrl,
-		page, consumer.FeedbacksPageSize, from, to)
-}
-
-func (consumer *FeedbacksConsumer) authorizationToken() string {
-	authzToken, err := consumer.AuthorizationService.GetAuthorizationToken()
-	if err != nil {
-		log.Fatal("Error while getting an authorization token: ", err)
-	}
-	return authzToken
-}
-
-func (consumer *FeedbacksConsumer) updateLastFetchedPage(page int64) {
-	consumer.StateHolder.SetIntState(lastFetchedPageState, page)
 }
 
 func (consumer *FeedbacksConsumer) waitToConsumeNextPage() {

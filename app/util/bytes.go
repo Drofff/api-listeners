@@ -1,31 +1,16 @@
 package util
 
-func removeLeadingAndTrailingZeros(b []byte) ([]byte, error) {
-	fnz := getIndexOfFirstNonZeroByte(b)
-	lnz := getIndexOfLastNonZeroByte(b)
-	if fnz == -1 || lnz == -1 {
-		return nil, BytesOperationError("Can not find any non zero bytes")
-	}
-	rightBoundary := lnz + 1
-	return b[fnz:rightBoundary], nil
-}
-
-func getIndexOfFirstNonZeroByte(b []byte) int {
-	for i, bi := range b {
-		if bi != 0 {
-			return i
+func replaceZerosWithSpaceChar(bytes []byte) []byte {
+	resBytes := make([]byte, len(bytes))
+	for i := 0; i < len(bytes); i++ {
+		b := bytes[i]
+		if b == 0 {
+			resBytes[i] = ' '
+		} else {
+			resBytes[i] = b
 		}
 	}
-	return -1
-}
-
-func getIndexOfLastNonZeroByte(b []byte) int {
-	for i := len(b) - 1; i >= 0; i-- {
-		if b[i] != 0 {
-			return i
-		}
-	}
-	return -1
+	return resBytes
 }
 
 func areBytesEqual(b0 []byte, b1 []byte) bool {
@@ -38,10 +23,4 @@ func areBytesEqual(b0 []byte, b1 []byte) bool {
 		}
 	}
 	return true
-}
-
-type BytesOperationError string
-
-func (err BytesOperationError) Error() string {
-	return string(err)
 }

@@ -11,12 +11,20 @@ func DoGetWithToken(url string, token string, respBody interface{}) error {
 		return err
 	}
 	req.Header.Set("Token", token)
-	c := http.Client{}
-	resp, err := c.Do(req)
+	content, err := execClientRequest(req)
 	if err != nil {
 		return err
 	}
-	return ParseJson(resp.Body, respBody)
+	return ParseJsonBytes(content, respBody)
+}
+
+func execClientRequest(req *http.Request) ([]byte, error) {
+	c := http.Client{}
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	return readAll(resp)
 }
 
 func DoPostJson(url string, body interface{}, respBody interface{}) error {

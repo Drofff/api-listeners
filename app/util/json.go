@@ -15,15 +15,12 @@ func ToJson(content interface{}) (io.Reader, error) {
 }
 
 func ParseJsonBytes(content []byte, resultJson interface{}) error {
-	content, err := removeLeadingAndTrailingZeros(content)
-	if err != nil {
-		return err
-	}
+	content = replaceZerosWithSpaceChar(content)
 	contentReader := bytes.NewReader(content)
-	return ParseJson(contentReader, resultJson)
+	return parseJson(contentReader, resultJson)
 }
 
-func ParseJson(r io.Reader, resultJson interface{}) error {
+func parseJson(r io.Reader, resultJson interface{}) error {
 	d := json.NewDecoder(r)
 	return d.Decode(resultJson)
 }

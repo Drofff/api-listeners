@@ -10,7 +10,8 @@ import (
 
 type StateHolder interface {
 	GetIntState(key string) (int64, error)
-	SetIntState(key string, state int64)
+	GetState(key string) (string, error)
+	SetState(key string, state interface{})
 }
 
 type FileStateHolder struct {
@@ -20,14 +21,22 @@ type FileStateHolder struct {
 const keyAndStateDelimiter = "="
 
 func (service FileStateHolder) GetIntState(key string) (int64, error) {
-	prefix := key + keyAndStateDelimiter
-	stateStr, err := service.getStateFromFileByPrefix(prefix)
+	stateStr, err := service.GetState(key)
 	if err != nil {
 		return -1, err
 	}
 	state, err := strconv.ParseInt(stateStr, 0, 64)
 	if err != nil {
 		return -1, err
+	}
+	return state, nil
+}
+
+func (service FileStateHolder) GetState(key string) (string, error) {
+	prefix := key + keyAndStateDelimiter
+	state, err := service.getStateFromFileByPrefix(prefix)
+	if err != nil {
+		return "", err
 	}
 	return state, nil
 }
@@ -41,7 +50,7 @@ func (service FileStateHolder) getStateFromFileByPrefix(prefix string) (string, 
 	return keyAndState[1], nil
 }
 
-func (service FileStateHolder) SetIntState(key string, state int64) {
+func (service FileStateHolder) SetState(key string, state interface{}) {
 	prefix := key + keyAndStateDelimiter
 	l := prefix + fmt.Sprint(state)
 	ln, _ := service.getLineWithPrefix(prefix)
