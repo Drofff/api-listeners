@@ -44,20 +44,36 @@ func (service *JwtAuthorizationService) hasValidCachedToken() bool {
 }
 
 func (service *JwtAuthorizationService) requestNewJwt() (string, error) {
-	authReq := struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}{Username: service.Username, Password: service.Password}
-	authResp := struct {
-		Response struct {
-			Data struct {
-				Token string `json:"token"`
-			} `json:"data"`
-		} `json:"response"`
-	}{}
+	authReq := service.buildAuthRequest()
+	authResp := AuthenticationResponse{}
 	err := util.DoPostJson(service.LoginUrl, authReq, &authResp)
 	if err != nil {
 		return "", err
 	}
-	return authResp.Response.Data.Token, nil
+	token := authResp.Response.Data.Token
+	if util.IsBlank(token) {
+		return "", AuthenticationError("Incorrect login credentials")
+	}
+	return token, nil
+}
+
+func (service *JwtAuthorizationService) buildAuthRequest() interface{} {
+	return struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}{Username: service.Username, Password: service.Password}
+}
+
+type AuthenticationResponse struct {
+	Response struct {
+		Data struct {
+			Token string `json:"token"`
+		} `json:"data"`
+	} `json:"response"`
+}
+
+type AuthenticationError string
+
+func (err AuthenticationError) Error() string {
+	return string(err)
 }

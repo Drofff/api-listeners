@@ -68,8 +68,8 @@ const envKey = "ozzy_rate"
 	envKey and expects value to be of format: key_0=value_0;key_N=value_N
  */
 func (service *EmbeddedFileConfigService) loadEnvConfig() {
-	envProps, present := os.LookupEnv(envKey)
-	if !present {
+	envProps := os.Getenv(envKey)
+	if util.IsBlank(envProps) {
 		return
 	}
 	for _, envProp := range strings.Split(envProps, ";") {
