@@ -3,6 +3,7 @@ package service
 import (
 	"api-listeners/app/util"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -13,7 +14,7 @@ type ConfigService interface {
 }
 
 type EmbeddedFileConfigService struct {
-	FilePath string
+	ConfigFilePath string
 	props map[string]string
 }
 
@@ -32,24 +33,23 @@ func (service *EmbeddedFileConfigService) GetProp(key string) string {
 
 func (service *EmbeddedFileConfigService) getConfig() map[string]string {
 	if service.props == nil {
-		service.loadConfig()
+		service.props = make(map[string]string)
+		service.loadConfigFromFile()
+		service.loadEnvConfig()
 	}
 	return service.props
 }
 
-func (service *EmbeddedFileConfigService) loadConfig() {
-	configStr, err := util.LoadAsStr(service.FilePath)
+func (service *EmbeddedFileConfigService) loadConfigFromFile() {
+	configFileText, err := util.LoadAsStr(service.ConfigFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	props := make(map[string]string)
-	for _, line := range strings.Split(configStr, "\n") {
+	for _, line := range strings.Split(configFileText, "\n") {
 		if isValidConfigLine(line) {
-			keyAndValue := strings.Split(line, "=")
-			props[keyAndValue[0]] = keyAndValue[1]
+			service.parseProp(line)
 		}
 	}
-	service.props = props
 }
 
 func isValidConfigLine(l string) bool {
@@ -59,4 +59,25 @@ func isValidConfigLine(l string) bool {
 func shouldIgnoreConfigLine(l string) bool {
 	lNoSpaces := strings.TrimSpace(l)
 	return strings.HasPrefix(lNoSpaces, "#") || len(lNoSpaces) == 0
+}
+
+const envKey = "ozzy_rate"
+
+/*
+	Loads configuration properties from environment variable specified by
+	envKey and expects value to be of format: key_0=value_0;key_N=value_N
+ */
+func (service *EmbeddedFileConfigService) loadEnvConfig() {
+	envProps, present := os.LookupEnv(envKey)
+	if !present {
+		return
+	}
+	for _, envProp := range strings.Split(envProps, ";") {
+		service.parseProp(envProp)
+	}
+}
+
+func (service *EmbeddedFileConfigService) parseProp(prop string) {
+	keyAndValue := strings.Split(prop, "=")
+	service.props[keyAndValue[0]] = keyAndValue[1]
 }

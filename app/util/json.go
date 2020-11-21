@@ -15,7 +15,7 @@ func ToJson(content interface{}) (io.Reader, error) {
 }
 
 func ParseJsonBytes(content []byte, resultJson interface{}) error {
-	content = replaceZerosWithSpaceChar(content)
+	content = removeZeros(content)
 	contentReader := bytes.NewReader(content)
 	return parseJson(contentReader, resultJson)
 }

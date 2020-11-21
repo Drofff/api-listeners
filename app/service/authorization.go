@@ -10,8 +10,9 @@ type AuthorizationService interface {
 }
 
 type JwtAuthorizationService struct {
-	RefreshTokenUrl string
-	RefreshToken string
+	LoginUrl string
+	Username string
+	Password string
 	TokenTimeToLiveMinutes int64
 	authzTokenCache authorizationTokenCache
 }
@@ -43,20 +44,20 @@ func (service *JwtAuthorizationService) hasValidCachedToken() bool {
 }
 
 func (service *JwtAuthorizationService) requestNewJwt() (string, error) {
-	refreshReq := struct {
-		RefreshToken string `json:"refreshToken"`
-		Token string `json:"token"`
-	}{RefreshToken: service.RefreshToken, Token: "Whatever"}
-	refreshResp := struct {
+	authReq := struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}{Username: service.Username, Password: service.Password}
+	authResp := struct {
 		Response struct {
 			Data struct {
 				Token string `json:"token"`
 			} `json:"data"`
 		} `json:"response"`
 	}{}
-	err := util.DoPostJson(service.RefreshTokenUrl, refreshReq, &refreshResp)
+	err := util.DoPostJson(service.LoginUrl, authReq, &authResp)
 	if err != nil {
 		return "", err
 	}
-	return refreshResp.Response.Data.Token, nil
+	return authResp.Response.Data.Token, nil
 }

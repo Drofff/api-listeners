@@ -25,7 +25,7 @@ func TestSetAndGetState(t *testing.T) {
 	sh := FileStateHolder{FilePath: testStateFile}
 	testKey := "age"
 	var testState int64 = 20
-	sh.SetIntState(testKey, testState)
+	sh.SetState(testKey, testState)
 	savedState, err := sh.GetIntState(testKey)
 	if err != nil {
 		t.Error(err)

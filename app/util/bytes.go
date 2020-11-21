@@ -1,16 +1,26 @@
 package util
 
-func replaceZerosWithSpaceChar(bytes []byte) []byte {
-	resBytes := make([]byte, len(bytes))
-	for i := 0; i < len(bytes); i++ {
-		b := bytes[i]
-		if b == 0 {
-			resBytes[i] = ' '
-		} else {
-			resBytes[i] = b
+func removeZeros(bytes []byte) []byte {
+	nonZerosCount := len(bytes) - countZeros(bytes)
+	res := make([]byte, nonZerosCount)
+	resIndex := 0
+	for _, b := range bytes {
+		if b != 0 {
+			res[resIndex] = b
+			resIndex++
 		}
 	}
-	return resBytes
+	return res
+}
+
+func countZeros(bytes []byte) int {
+	c := 0
+	for _, b := range bytes {
+		if b == 0 {
+			c++
+		}
+ 	}
+ 	return c
 }
 
 func areBytesEqual(b0 []byte, b1 []byte) bool {

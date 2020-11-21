@@ -7,7 +7,7 @@ import (
 
 func main() {
 	fmt.Println("Starting API Listeners")
-	configService := &service.EmbeddedFileConfigService{FilePath: "application.properties"}
+	configService := &service.EmbeddedFileConfigService{ConfigFilePath: "application.properties"}
 	feedbacksConsumer := &service.FeedbacksConsumer{
 		GetFeedbacksUrl: configService.GetProp("orty-api.get-feedbacks.url"),
 		RefreshToken: configService.GetProp("orty-api.refresh-token"),
@@ -26,8 +26,9 @@ func main() {
 
 func newAuthorizationService(configService service.ConfigService) service.AuthorizationService {
 	return &service.JwtAuthorizationService{
-		RefreshTokenUrl: configService.GetProp("orty-api.refresh-token.url"),
-		RefreshToken: configService.GetProp("orty-api.refresh-token"),
+		LoginUrl: configService.GetProp("orty-api.login.url"),
+		Username: configService.GetProp("orty-api.username"),
+		Password: configService.GetProp("orty-api.password"),
 		TokenTimeToLiveMinutes: configService.GetIntProp("orty-api.jwt.time-to-live-minutes"),
 	}
 }
