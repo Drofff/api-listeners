@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -44,7 +45,14 @@ func DoPost(url string, contentType string, body io.Reader) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	if isNotSuccessCode(resp.StatusCode) {
+		return nil, HttpRequestError(resp.StatusCode)
+	}
 	return readAll(resp)
+}
+
+func isNotSuccessCode(code int) bool {
+	return code < 200 || code >= 300
 }
 
 func readAll(resp *http.Response) ([]byte, error) {
@@ -60,4 +68,10 @@ func readAll(resp *http.Response) ([]byte, error) {
 		}
 		respBody = append(respBody, bodyPart...)
 	}
+}
+
+type HttpRequestError int
+
+func (err HttpRequestError) Error() string {
+	return fmt.Sprintf("HTTP server respond with status %v\n", int(err))
 }

@@ -35,6 +35,7 @@ func newAuthorizationService(configService service.ConfigService) service.Author
 
 func newFeedbacksProcessor(configService service.ConfigService) service.FeedbacksProcessor {
 	return &service.BotApiFeedbacksProcessor{
+		AccessKey: configService.GetProp("bot-api.access-key"),
 		SendFeedbacksUrl: configService.GetProp("bot-api.send-feedbacks.url"),
 	}
 }

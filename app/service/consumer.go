@@ -114,7 +114,7 @@ func (consumer *FeedbacksConsumer) getLastFetchedPage() int64 {
 
 func (consumer *FeedbacksConsumer) waitToConsumeNextPage() {
 	nextPageDelay := consumer.NextPageDelayMinutes
-	fmt.Printf("Waiting %v minutes to consume next feedbacks page\n", nextPageDelay)
+	fmt.Printf("INFO: waiting %v minutes to consume next feedbacks page\n", nextPageDelay)
 	nextPageDelayTime := time.Duration(nextPageDelay) * time.Minute
 	time.Sleep(nextPageDelayTime)
 }

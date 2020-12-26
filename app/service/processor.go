@@ -13,6 +13,7 @@ type FeedbacksProcessor interface {
 }
 
 type BotApiFeedbacksProcessor struct {
+	AccessKey string
 	SendFeedbacksUrl string
 }
 
@@ -37,11 +38,17 @@ func (service *BotApiFeedbacksProcessor) processFeedback(feedback dto.FeedbackDt
 		return
 	}
 	botApiFeedbackDto := asBotApiFeedbackDto(feedback)
-	err := util.DoPostJson(service.SendFeedbacksUrl, botApiFeedbackDto, &struct{}{})
+	err := util.DoPostJson(service.sendFeedbacksUrl(), botApiFeedbackDto, &struct{}{})
 	if err != nil && err != io.EOF {
 		fmt.Printf("ERROR: can not send feedback %v because of - %v\n", feedback, err)
+	} else {
+		fmt.Printf("INFO: have successfully sent feedback %v\n", feedback)
 	}
 	cache.SaveID(feedback.ID)
+}
+
+func (service *BotApiFeedbacksProcessor) sendFeedbacksUrl() string {
+	return service.SendFeedbacksUrl + "?accessKey=" + service.AccessKey
 }
 
 func asBotApiFeedbackDto(feedback dto.FeedbackDto) interface{} {
