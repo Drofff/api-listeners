@@ -5,6 +5,7 @@ import (
 	"api-listeners/app/dto"
 	"api-listeners/app/util"
 	"fmt"
+	"io"
 )
 
 type FeedbacksProcessor interface {
@@ -37,7 +38,7 @@ func (service *BotApiFeedbacksProcessor) processFeedback(feedback dto.FeedbackDt
 	}
 	botApiFeedbackDto := asBotApiFeedbackDto(feedback)
 	err := util.DoPostJson(service.SendFeedbacksUrl, botApiFeedbackDto, &struct{}{})
-	if err != nil {
+	if err != nil && err != io.EOF {
 		fmt.Printf("ERROR: can not send feedback %v because of - %v\n", feedback, err)
 	}
 	cache.SaveID(feedback.ID)
